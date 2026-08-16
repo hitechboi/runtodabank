@@ -35,20 +35,18 @@ local function smoothTeleport(startPosition, endPosition, duration)
         task.wait(0.016)
     end
 end
+
 --//services
 local runService = game:GetService("RunService")
 local schedulerRunning = true
---//remote loader
+
+--//loader
 local function loadRemote(url, label)
     local body = httpget(url)
     if type(body) ~= "string" or body == "" then
         warn("[Check It] Empty response while loading " .. label)
         return false, nil
     end
-
-    -- GitHub and proxies commonly return plain-text errors such as
-    -- "404: Not Found". Passing that to loadstring caused the reported
-    -- "expected identifier ... got ':'" parser error.
     local chunk, compileError = loadstring(body, "@" .. label)
     if not chunk then
         warn("[Check It] Could not compile " .. label .. ": " .. tostring(compileError))
@@ -65,7 +63,7 @@ end
 
 local uiLibrary
 do
-    local loaded, library = loadRemote("https://raw.githubusercontent.com/hitechboi/checkitv2/refs/heads/main/imjussayin.lua", "PLui")
+    local loaded, library = loadRemote("https://raw.githubusercontent.com/hitechboi/runtodabank/refs/heads/main/plui.lua", "PLui")
     if loaded and library then
         uiLibrary = library
     elseif _G.lib then
@@ -114,20 +112,6 @@ local autoTab=window:Tab("auto")
 local teleportsTab=window:Tab("teleports")
 local mainSec=gunModsTab:Section("main")
 mainSec:Toggle({label="enabled",default=false,id="master_toggle",col=1,desc="Master toggle for all gun mods",callback=function(_s)gunModsEnabled=_s end})
---[[local collectSec=autoTab:Section("collect", 2)
-local autoKeycardToggle
-autoKeycardToggle = collectSec:Toggle({label="auto keycard collect",default=false,id="auto_keycard",col=2,desc="Automatically collects keycard if missing",callback=function(s)
-    autoKeycardEnabled = s
-    if s then
-        local t = localPlayer.Team
-        if t and (string.match(string.lower(t.Name), "guard") or string.match(string.lower(t.Name), "police")) then
-            autoKeycardEnabled = false
-            if autoKeycardToggle and autoKeycardToggle.SetState then autoKeycardToggle:SetState(false) end
-            notify("Auto Keycard", "youre in the guards team idiot ¬_¬", 4)
-        end
-    end
-end})]]
-local autoKeycardEnabled = false
 local autoSec=autoTab:Section("auto arrest")
 local autoCuffsEnabled = false
 local lastDeathTime = 0
@@ -249,7 +233,8 @@ task.spawn(function()
         end
     end)
 end)
---//native state tracking
+
+--//states
 local initialCharacter = localPlayer.Character
 local lastCharacterAddress = initialCharacter and initialCharacter.Address or nil
 local initialTeam = localPlayer.Team
@@ -445,74 +430,12 @@ task.spawn(function()
         end)
     end
 end)
---[[task.spawn(function()
-    local collectingKeycard = false
-    while not shuttingDown and schedulerRunning do
-        task.wait(0.5)
-        if autoKeycardEnabled then
-            local t = localPlayer.Team
-            if t and (string.match(string.lower(t.Name), "guard") or string.match(string.lower(t.Name), "police")) then
-                autoKeycardEnabled = false
-                if autoKeycardToggle and autoKeycardToggle.SetState then autoKeycardToggle:SetState(false) end
-                notify("Auto Keycard", "youre in the guards team idiot ¬_¬", 4)
-                continue
-            end
-            local hasKey = false
-            local bp = localPlayer:FindFirstChild("Backpack")
-            if bp and bp:FindFirstChild("Key card") then hasKey = true end
-            local char = localPlayer.Character
-            if char and char:FindFirstChild("Key card") then hasKey = true end
-            if not hasKey then
-                local kc_pos = nil
-                local kc_drop = workspace:FindFirstChild("Key card")
-                if kc_drop then
-                    if kc_drop:IsA("Tool") then
-                        local handle = kc_drop:FindFirstChild("Handle")
-                        if handle and handle:IsA("BasePart") then kc_pos = handle.Position end
-                    elseif kc_drop:IsA("Model") or kc_drop:IsA("Folder") then
-                        local part = kc_drop:FindFirstChild("ITEMPICKUP") or kc_drop:FindFirstChildWhichIsA("BasePart", true)
-                        if part then kc_pos = part.Position end
-                    elseif kc_drop:IsA("BasePart") then
-                        kc_pos = kc_drop.Position
-                    end
-                end
-                if not kc_pos then
-                    local giver = workspace:FindFirstChild("Prison_ITEMS") and workspace.Prison_ITEMS:FindFirstChild("giver")
-                    local kc_giver = giver and (giver:FindFirstChild("Key card") or giver:FindFirstChild("Keycard"))
-                    if kc_giver then
-                        local pickup = kc_giver:FindFirstChild("ITEMPICKUP") or (kc_giver:IsA("BasePart") and kc_giver)
-                        if pickup then kc_pos = pickup.Position end
-                    end
-                end
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                if hrp and kc_pos then
-                    if not collectingKeycard then
-                        collectingKeycard = true
-                        notify("Auto Keycard", "going to keycard", 3)
-                    end
-                    teleportTo(kc_pos.X, kc_pos.Y, kc_pos.Z)
-                    task.wait(0.5)
-                else
-                    if collectingKeycard then collectingKeycard = false end
-                end
-            else
-                if collectingKeycard then
-                    collectingKeycard = false
-                    notify("Auto Keycard", "collected keycard", 3)
-                end
-            end
-        else
-            collectingKeycard = false
-        end
-    end
-end)]]
 while not shuttingDown do task.wait(1)end schedulerRunning=false
 _G.MyMoms_Cleanup = function()
     schedulerRunning = false
     shuttingDown = true
     pingEnabled = false
     autoCuffsEnabled = false
-    autoKeycardEnabled = false
     if uiLibrary and uiLibrary.Destroy then uiLibrary:Destroy() end
     if heartbeatConnection then heartbeatConnection:Disconnect() end
 end
