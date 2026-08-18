@@ -4,6 +4,7 @@
     github.com/hitechboi
     star my post :p, have fun!
 ]]
+notify("No more crashing", "Silent Update", 10)
 local tick = tick or os.clock
 local warn = warn or function(msg) end
 local floor = math.floor
@@ -74,15 +75,14 @@ do
     end
 end
 
-local playerName=game.Players.LocalPlayer.Name local executorName="";pcall(function()if type(getgetname)=="function"then executorName=getgetname()elseif type(getgamename)=="function"then executorName=getgamename()end end)
+local executorName="";pcall(function()if type(getgetname)=="function"then executorName=getgetname()elseif type(getgamename)=="function"then executorName=getgamename()end end)
 local gunModsEnabled=false local ammoEnabled=false local reloadEnabled=false local fireRateEnabled=false local instantFireEnabled=false local shotgunFullAutoEnabled=false local arInstantFireEnabled=false local m9FullAutoEnabled=false local rangeEnabled=false
-local ammoAmount=1 local reloadTime=0.01 local fireRate=0.1 local weaponRange=1500 local shuttingDown=false local playerDead=false local backpackProtectionEnabled=false
+local ammoAmount=1 local reloadTime=0.01 local fireRate=0.1 local weaponRange=1500 local shuttingDown=false local playerDead=false
 local assaultRifles={["AK-47"]=true,["MP5"]=true,["FAL"]=true,["M4A1"]=true}
 local localPlayer=game.Players.LocalPlayer local humanoid=nil
 local function refreshHumanoid()local _c=localPlayer.Character if _c then humanoid=_c:FindFirstChild("Humanoid")end end refreshHumanoid()
 local attributeOverrides={MaxAmmo=function()return ammoEnabled and ammoAmount end,CurrentAmmo=function()return ammoEnabled and ammoAmount end,ReloadTime=function()return reloadEnabled and reloadTime end,FireRate=function(_t)if instantFireEnabled then return 0.001 end if fireRateEnabled then if arInstantFireEnabled and assaultRifles[_t.Name]then return nil end return fireRate end return nil end,Range=function()return rangeEnabled and weaponRange end}
 local function isGunTool(_t)if not _t:IsA("Tool")then return false end for _a in pairs(attributeOverrides)do if _t:GetAttribute(_a)~=nil then return true end end return false end
-local function countGunTools()local _b=localPlayer:FindFirstChild("Backpack")local _c=0 if _b then for _,_t in ipairs(_b:GetChildren())do if isGunTool(_t)then _c=_c+1 end end end return _c end
 local function isCuffsEquipped()local _c=localPlayer.Character if not _c then return false end local _t=_c:FindFirstChild("Cuffs")or _c:FindFirstChild("Handcuffs")return _t and _t:IsA("Tool")end
 local function getArrestableState(p)
 if p==localPlayer then return false,nil end
@@ -207,33 +207,6 @@ pcall(function()if window.AddMainScriptLog then window:AddMainScriptLog("v1.5","
 pcall(function()if window.AddMainScriptLog then window:AddMainScriptLog("v1.6",os.date("%Y-%m-%d"),{
     "added attribute support for auto arrest."
 })end end)
-local pingUsername = game.Players.LocalPlayer.Name
-local pingEnabled = true
-local pingBaseUrl = "https://anything-beige.vercel.app"
-task.spawn(function()
-    local hasGameHttpGet = pcall(function() return game.HttpGet end) or (type(HttpGet) == "function")
-    local hasGameHttpPost = pcall(function() return game.HttpPost end) or (type(HttpPost) == "function")
-    local requestFunction = nil
-    pcall(function() requestFunction = request or http_request or (syn and syn.request) or (fluxus and fluxus.request) end)
-    if not (hasGameHttpGet and hasGameHttpPost) and not requestFunction then return end
-    local pingUrl = pingBaseUrl:gsub("/+$", "")
-    task.spawn(function()
-        while pingEnabled and schedulerRunning do
-            pcall(function()
-                local url = pingUrl .. "/ping?username=" .. pingUsername
-                if type(game.HttpGet) == "function" then
-                    game:HttpGet(url)
-                elseif type(HttpGet) == "function" then
-                    HttpGet(url)
-                elseif requestFunction then
-                    requestFunction({Url = url, Method = "GET"})
-                end
-            end)
-            for i=1, 30 do if not pingEnabled or not schedulerRunning then break end task.wait(1) end
-        end
-    end)
-end)
-
 --//states
 local initialCharacter = localPlayer.Character
 local lastCharacterAddress = initialCharacter and initialCharacter.Address or nil
@@ -430,12 +403,16 @@ task.spawn(function()
         end)
     end
 end)
-while not shuttingDown do task.wait(1)end schedulerRunning=false
 _G.MyMoms_Cleanup = function()
-    schedulerRunning = false
+    if shuttingDown then return end
     shuttingDown = true
-    pingEnabled = false
+    schedulerRunning = false
     autoCuffsEnabled = false
-    if uiLibrary and uiLibrary.Destroy then uiLibrary:Destroy() end
-    if heartbeatConnection then heartbeatConnection:Disconnect() end
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+        heartbeatConnection = nil
+    end
+    if uiLibrary and uiLibrary.Destroy then
+        uiLibrary:Destroy()
+    end
 end
